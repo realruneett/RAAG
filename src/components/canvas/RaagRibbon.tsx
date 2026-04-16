@@ -97,26 +97,40 @@ export function RaagRibbon({ deckId }: { deckId: 'A' | 'B' }) {
   return (
     <DragControls 
         onDragEnd={onDragEnd}
-        // Ensure the mesh handles its own local transform so the DragControls can manipulate it
     >
-      <mesh ref={meshRef} position={position}>
-        <tubeGeometry args={[curve, 256, 0.4, 12, false]} />
-        <shaderMaterial
-          ref={materialRef}
-          uniforms={{
-            uTime: { value: 0 },
-            uPlaybackRate: { value: 1.0 },
-            uFrequencyData: { value: new Float32Array(64) },
-            uColorA: { value: colors.a },
-            uColorB: { value: colors.b },
-          }}
-          vertexShader={ribbonVert}
-          fragmentShader={ribbonFrag}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
+      <group position={position}>
+        {/* GROUND ANCHOR: Vertical stalk connecting the ribbon to a floor grid */}
+        <mesh position={[0, (-position[1] - 5) / 2, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, Math.abs(position[1] + 5), 8]} />
+          <meshBasicMaterial color={colors.a} transparent opacity={0.15} />
+        </mesh>
+
+        {/* VOLUME RING: Expanding circle showing the current gain level */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -position[1] - 4.95, 0]}>
+           <ringGeometry args={[energies[deckId === 'A' ? 'deckA' : 'deckB'] * 2, energies[deckId === 'A' ? 'deckA' : 'deckB'] * 2 + 0.05, 32]} />
+           <meshBasicMaterial color={colors.a} transparent opacity={0.3} side={THREE.DoubleSide} />
+        </mesh>
+
+        <mesh ref={meshRef}>
+          <tubeGeometry args={[curve, 256, 0.4 + (energies[deckId === 'A' ? 'deckA' : 'deckB'] * 0.2), 12, false]} />
+          <shaderMaterial
+            ref={materialRef}
+            uniforms={{
+              uTime: { value: 0 },
+              uPlaybackRate: { value: 1.0 },
+              uFrequencyData: { value: new Float32Array(64) },
+              uColorA: { value: colors.a },
+              uColorB: { value: colors.b },
+              uIntensity: { value: 1.0 },
+            }}
+            vertexShader={ribbonVert}
+            fragmentShader={ribbonFrag}
+            transparent
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      </group>
     </DragControls>
   );
 }
